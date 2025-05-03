@@ -32162,6 +32162,7 @@ const BASE_URL = process.env.GITHUB_SERVER_URL
 // :param environment: The environment to which the lock applies
 // :param global: A bool indicating whether the lock is global or not
 // :param headless: A bool indicating whether the lock is being claimed from a headless run or not
+// :param customLink: A custom link to associate with the lock, this overrides the default link
 // :returns: The result of the createOrUpdateFileContents API call
 async function createLock(
   octokit,
@@ -32172,20 +32173,35 @@ async function createLock(
   environment,
   global,
   reactionId,
-  headless
+  headless,
+  customLink
 ) {
   // Deconstruct the context to obtain the owner and repo
   const {owner, repo} = context.repo
 
   var link
   var branch
-  if (headless) {
+
+  if (customLink && customLink.trim() !== '') {
+    // If a custom link is provided, use it
+    link = customLink
+    core.info(`Using custom link: ${link}`)
+  } else if (headless) {
+    // Default link for headless mode
     sticky = true
     link = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
     branch = 'headless mode'
+    core.info(`Using headless mode link: ${link}`)
   } else {
+    // Default link for comment-triggered locks
     link = `${BASE_URL}/${owner}/${repo}/pull/${context.issue.number}#issuecomment-${context.payload.comment.id}`
     branch = ref
+    core.info(`Using comment-triggered link: ${link}`)
+  }
+
+  // Set branch if not already set (in case custom link was used)
+  if (!branch) {
+    branch = headless ? 'headless mode' : ref
   }
 
   // Construct the file contents for the lock file
@@ -32238,7 +32254,7 @@ async function createLock(
     ### 🔒 Deployment Lock Claimed
 
     ${globalMsg}
-    
+
     You are now the only user that can trigger deployments ${lockMsg} until the deployment lock is removed
 
     > This lock is _sticky_ and will persist until someone runs \`${lockData.unlock_command}\`
@@ -32447,7 +32463,7 @@ async function checkLockOwner(
   if (lockData.global === true) {
     lockText = lib_default()(
       `the \`global\` deployment lock is currently claimed by __${lockData.created_by}__
-      
+
       A \`global\` deployment lock prevents all other users from deploying to any environment except for the owner of the lock
       `
     )
@@ -32610,6 +32626,14 @@ async function lock(
     reason = await findReason(context, sticky)
   }
 
+  // Get the custom link if provided
+  const customLink = core.getInput('link').trim()
+  if (customLink && customLink !== '') {
+    core.info(`Custom link provided: ${customLink}`)
+  } else {
+    core.info('No custom link provided')
+  }
+
   // Before we can process THIS lock request, we must first check for a global lock
   // If there is a global lock, we must check if the requestor is the owner of the lock
   // We can only proceed here if there is NO global lock or if the requestor is the owner of the global lock
@@ -32702,7 +32726,8 @@ async function lock(
         environment,
         global,
         reactionId,
-        headless
+        headless,
+        customLink
       )
       return {status: true, lockData: null, globalFlag, environment, global}
     } else {
@@ -32753,7 +32778,8 @@ async function lock(
     environment,
     global,
     reactionId,
-    headless
+    headless,
+    customLink
   )
   return {status: true, lockData: null, globalFlag, environment, global}
 }
