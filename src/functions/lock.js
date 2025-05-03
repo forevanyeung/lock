@@ -21,7 +21,7 @@ const BASE_URL = process.env.GITHUB_SERVER_URL
 // :param environment: The environment to which the lock applies
 // :param global: A bool indicating whether the lock is global or not
 // :param headless: A bool indicating whether the lock is being claimed from a headless run or not
-// :param link: A custom link to associate with the lock, this overrides the default link
+// :param customLink: A custom link to associate with the lock, this overrides the default link
 // :returns: The result of the createOrUpdateFileContents API call
 async function createLock(
   octokit,
@@ -43,7 +43,7 @@ async function createLock(
 
   if (customLink && customLink.trim() !== '') {
     // If a custom link is provided, use it
-    link = customLink.trim()
+    link = customLink
     core.info(`Using custom link: ${link}`)
   } else if (headless) {
     // Default link for headless mode
@@ -489,6 +489,8 @@ export async function lock(
   const customLink = core.getInput('link').trim()
   if (customLink && customLink !== '') {
     core.info(`Custom link provided: ${customLink}`)
+  } else {
+    core.info('No custom link provided')
   }
 
   // Before we can process THIS lock request, we must first check for a global lock
