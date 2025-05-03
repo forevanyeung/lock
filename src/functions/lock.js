@@ -44,15 +44,18 @@ async function createLock(
   if (customLink && customLink.trim() !== '') {
     // If a custom link is provided, use it
     link = customLink.trim()
+    core.info(`Using custom link: ${link}`)
   } else if (headless) {
     // Default link for headless mode
     sticky = true
     link = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
     branch = 'headless mode'
+    core.info(`Using headless mode link: ${link}`)
   } else {
     // Default link for comment-triggered locks
     link = `${BASE_URL}/${owner}/${repo}/pull/${context.issue.number}#issuecomment-${context.payload.comment.id}`
     branch = ref
+    core.info(`Using comment-triggered link: ${link}`)
   }
 
   // Set branch if not already set (in case custom link was used)
@@ -483,7 +486,10 @@ export async function lock(
   }
 
   // Get the custom link if provided
-  const customLink = core.getInput('link')
+  const customLink = core.getInput('link').trim()
+  if (customLink && customLink !== '') {
+    core.info(`Custom link provided: ${customLink}`)
+  }
 
   // Before we can process THIS lock request, we must first check for a global lock
   // If there is a global lock, we must check if the requestor is the owner of the lock
