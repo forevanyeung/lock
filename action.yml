@@ -47,6 +47,9 @@ inputs:
   reason:
     description: Reason for claiming the deployment lock for this repository
     required: false
+  link:
+    description: Optional custom link to associate with the lock. If provided, this link will be used instead of the default link
+    required: false
 outputs:
   triggered:
     description: 'The string "true" if the trigger was found, otherwise the string "false"'

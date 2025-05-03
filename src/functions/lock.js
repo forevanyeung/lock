@@ -38,13 +38,26 @@ async function createLock(
 
   var link
   var branch
-  if (headless) {
+
+  // Check if a custom link was provided
+  const customLink = core.getInput('link')
+  if (customLink && customLink.trim() !== '') {
+    // If a custom link is provided, use it
+    link = customLink.trim()
+  } else if (headless) {
+    // Default link for headless mode
     sticky = true
     link = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`
     branch = 'headless mode'
   } else {
+    // Default link for comment-triggered locks
     link = `${BASE_URL}/${owner}/${repo}/pull/${context.issue.number}#issuecomment-${context.payload.comment.id}`
     branch = ref
+  }
+
+  // Set branch if not already set (in case custom link was used)
+  if (!branch) {
+    branch = headless ? 'headless mode' : ref
   }
 
   // Construct the file contents for the lock file
@@ -97,7 +110,7 @@ async function createLock(
     ### 🔒 Deployment Lock Claimed
 
     ${globalMsg}
-    
+
     You are now the only user that can trigger deployments ${lockMsg} until the deployment lock is removed
 
     > This lock is _sticky_ and will persist until someone runs \`${lockData.unlock_command}\`
@@ -306,7 +319,7 @@ async function checkLockOwner(
   if (lockData.global === true) {
     lockText = dedent(
       `the \`global\` deployment lock is currently claimed by __${lockData.created_by}__
-      
+
       A \`global\` deployment lock prevents all other users from deploying to any environment except for the owner of the lock
       `
     )

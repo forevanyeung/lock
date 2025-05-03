@@ -844,3 +844,51 @@ test('throws an error if an unhandled exception occurs', async () => {
     expect(e.message).toBe('Error: oh no')
   }
 })
+
+test('uses custom link when provided', async () => {
+  // Set the custom link input
+  process.env.INPUT_LINK = 'https://example.com/custom-link'
+
+  const octokit = {
+    rest: {
+      repos: {
+        getBranch: jest
+          .fn()
+          .mockRejectedValueOnce(new NotFoundError('Reference does not exist'))
+          .mockReturnValueOnce({data: {commit: {sha: 'abc123'}}}),
+        get: jest.fn().mockReturnValue({data: {default_branch: 'main'}}),
+        createOrUpdateFileContents: jest.fn().mockImplementation((params) => {
+          // Decode the content to verify the link was set correctly
+          const content = JSON.parse(Buffer.from(params.content, 'base64').toString())
+          expect(content.link).toBe('https://example.com/custom-link')
+          return {}
+        }),
+        getContent: jest
+          .fn()
+          .mockRejectedValue(new NotFoundError('file not found'))
+      },
+      git: {
+        createRef: jest.fn().mockReturnValue({status: 201})
+      },
+      issues: {
+        createComment: jest.fn().mockReturnValue({})
+      }
+    }
+  }
+
+  expect(
+    await lock(octokit, context, ref, 123, true, environment)
+  ).toStrictEqual({
+    environment: 'production',
+    global: false,
+    globalFlag: '--global',
+    lockData: null,
+    status: true
+  })
+
+  expect(infoMock).toHaveBeenCalledWith('deployment lock obtained')
+  expect(infoMock).toHaveBeenCalledWith('deployment lock is sticky')
+
+  // Clean up the environment variable
+  delete process.env.INPUT_LINK
+})
