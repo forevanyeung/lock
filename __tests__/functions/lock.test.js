@@ -195,6 +195,45 @@ test('successfully obtains a deployment lock (non-sticky) by creating the branch
   expect(setOutputMock).toHaveBeenCalledWith('headless', 'true')
 })
 
+test('successfully obtains a deployment lock in headless mode with custom branch input', async () => {
+  const octokit = {
+    rest: {
+      repos: {
+        getBranch: jest
+          .fn()
+          .mockRejectedValueOnce(new NotFoundError('Reference does not exist'))
+          .mockReturnValueOnce({data: {commit: {sha: 'abc123'}}}),
+        get: jest.fn().mockReturnValue({data: {default_branch: 'main'}}),
+        createOrUpdateFileContents: jest.fn().mockReturnValue({}),
+        getContent: jest
+          .fn()
+          .mockRejectedValue(new NotFoundError('file not found'))
+      },
+      git: {
+        createRef: jest.fn().mockReturnValue({status: 201})
+      },
+      issues: {
+        createComment: jest.fn().mockReturnValue({})
+      }
+    }
+  }
+
+  const customBranch = 'feature/my-awesome-feature'
+  expect(
+    await lock(octokit, context, null, null, false, environment, false, true, customBranch)
+  ).toStrictEqual({
+    environment: 'production',
+    global: false,
+    globalFlag: '--global',
+    lockData: null,
+    status: true
+  })
+  expect(infoMock).toHaveBeenCalledWith(
+    'Created lock branch: production-branch-deploy-lock'
+  )
+  expect(setOutputMock).toHaveBeenCalledWith('headless', 'true')
+})
+
 test('Determines that another user has the lock and exits - during a lock claim on deployment', async () => {
   const octokit = {
     rest: {

@@ -50,6 +50,9 @@ inputs:
   link:
     description: Optional custom link to associate with the lock. If provided, this link will be used instead of the default link
     required: false
+  branch:
+    description: The branch name to use when running in headless mode. If not provided, defaults to 'headless mode'
+    required: false
 outputs:
   triggered:
     description: 'The string "true" if the trigger was found, otherwise the string "false"'

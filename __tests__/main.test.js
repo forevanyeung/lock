@@ -99,6 +99,12 @@ test('runs successfully in lock mode', async () => {
   expect(await run()).toBe('success - headless')
 })
 
+test('runs successfully in lock mode with branch input', async () => {
+  process.env.INPUT_MODE = 'lock'
+  process.env.INPUT_BRANCH = 'feature/test-branch'
+  expect(await run()).toBe('success - headless')
+})
+
 test('runs successfully in unlock mode', async () => {
   process.env.INPUT_MODE = 'unlock'
   expect(await run()).toBe('success - headless')

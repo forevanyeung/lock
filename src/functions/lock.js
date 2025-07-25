@@ -33,7 +33,8 @@ async function createLock(
   global,
   reactionId,
   headless,
-  customLink
+  customLink,
+  branchInput = null
 ) {
   // Deconstruct the context to obtain the owner and repo
   const {owner, repo} = context.repo
@@ -53,7 +54,11 @@ async function createLock(
 
   // Set branch name
   if (!branch) {
-    branch = headless ? 'headless mode' : ref
+    if (headless && branchInput && branchInput.trim() !== '') {
+      branch = branchInput.trim()
+    } else {
+      branch = headless ? 'headless mode' : ref
+    }
   }
 
   // Construct the file contents for the lock file
@@ -444,7 +449,8 @@ export async function lock(
   sticky,
   environment,
   detailsOnly = false,
-  headless = false
+  headless = false,
+  branchInput = null
 ) {
   // check if the environment is for the global lock
   var global = false
@@ -573,7 +579,8 @@ export async function lock(
         global,
         reactionId,
         headless,
-        customLink
+        customLink,
+        branchInput
       )
       return {status: true, lockData: null, globalFlag, environment, global}
     } else {
@@ -625,7 +632,8 @@ export async function lock(
     global,
     reactionId,
     headless,
-    customLink
+    customLink,
+    branchInput
   )
   return {status: true, lockData: null, globalFlag, environment, global}
 }

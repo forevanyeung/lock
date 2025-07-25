@@ -26,6 +26,7 @@ export async function run() {
     const lock_info_alias = core.getInput('lock_info_alias')
     const lock_mode = core.getInput('mode')
     const environment = core.getInput('environment') // the env to lock/unlock/check
+    const branch = core.getInput('branch') // the branch to use in headless mode
 
     // Get variables from the event context
     const {owner, repo} = context.repo
@@ -43,7 +44,8 @@ export async function run() {
         false, // sticky
         environment, // environment
         false, // detailsOnly
-        true // headless
+        true, // headless
+        branch // branch input for headless mode
       )
       return 'success - headless'
     } else if (lock_mode === 'unlock') {
