@@ -32174,7 +32174,8 @@ async function createLock(
   global,
   reactionId,
   headless,
-  customLink
+  customLink,
+  branchInput = null
 ) {
   // Deconstruct the context to obtain the owner and repo
   const {owner, repo} = context.repo
@@ -32194,7 +32195,11 @@ async function createLock(
 
   // Set branch name
   if (!branch) {
-    branch = headless ? 'headless mode' : ref
+    if (headless && branchInput && branchInput.trim() !== '') {
+      branch = branchInput.trim()
+    } else {
+      branch = headless ? 'headless mode' : ref
+    }
   }
 
   // Construct the file contents for the lock file
@@ -32585,7 +32590,8 @@ async function lock(
   sticky,
   environment,
   detailsOnly = false,
-  headless = false
+  headless = false,
+  branchInput = null
 ) {
   // check if the environment is for the global lock
   var global = false
@@ -32714,7 +32720,8 @@ async function lock(
         global,
         reactionId,
         headless,
-        customLink
+        customLink,
+        branchInput
       )
       return {status: true, lockData: null, globalFlag, environment, global}
     } else {
@@ -32766,7 +32773,8 @@ async function lock(
     global,
     reactionId,
     headless,
-    customLink
+    customLink,
+    branchInput
   )
   return {status: true, lockData: null, globalFlag, environment, global}
 }
@@ -33207,6 +33215,7 @@ async function run() {
     const lock_info_alias = core.getInput('lock_info_alias')
     const lock_mode = core.getInput('mode')
     const environment = core.getInput('environment') // the env to lock/unlock/check
+    const branch = core.getInput('branch') // the branch to use in headless mode
 
     // Get variables from the event context
     const {owner, repo} = github.context.repo
@@ -33224,7 +33233,8 @@ async function run() {
         false, // sticky
         environment, // environment
         false, // detailsOnly
-        true // headless
+        true, // headless
+        branch // branch input for headless mode
       )
       return 'success - headless'
     } else if (lock_mode === 'unlock') {
